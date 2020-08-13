@@ -1,0 +1,5 @@
+E:\works\qt\casia\projects\Msnhnet\Msnhnet0812\sharp\MsnhnetSharp\MsnhnetSharp\bin\Debug\MsnhnetSharp.dll
+E:\works\qt\casia\projects\Msnhnet\Msnhnet0812\sharp\MsnhnetSharp\MsnhnetSharp\bin\Debug\MsnhnetSharp.pdb
+E:\works\qt\casia\projects\Msnhnet\Msnhnet0812\sharp\MsnhnetSharp\MsnhnetSharp\obj\Debug\MsnhnetSharp.csproj.CoreCompileInputs.cache
+E:\works\qt\casia\projects\Msnhnet\Msnhnet0812\sharp\MsnhnetSharp\MsnhnetSharp\obj\Debug\MsnhnetSharp.dll
+E:\works\qt\casia\projects\Msnhnet\Msnhnet0812\sharp\MsnhnetSharp\MsnhnetSharp\obj\Debug\MsnhnetSharp.pdb
