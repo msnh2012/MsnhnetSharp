@@ -68,24 +68,30 @@ namespace MsnhnetForm
                 return;
             }
 
-            Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);
+            try
+            {
+                Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);
 
-            Bitmap bitmap = (Bitmap)pictureBox1.Image;
+                Bitmap bitmap = (Bitmap)pictureBox1.Image;
 
-            BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
+                BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
 
-            int best = net.RunClassifyList(bmpdata, MsnhnetDef.PredDataType.PRE_DATA_FC32_C3, false,false);
+                int best = net.RunClassifyList(bmpdata, MsnhnetDef.PredDataType.PRE_DATA_FC32_C3, false, false);
 
-            bitmap.UnlockBits(bmpdata);
+                bitmap.UnlockBits(bmpdata);
 
-            string[] labelList = labels.Split('\n');
+                string[] labelList = labels.Split('\n');
 
-            float time = net.GetCpuForwardTime();
+                float time = net.GetCpuForwardTime();
 
-            richTextBox1.AppendText("CPU inference time:" + time.ToString() + " ms\n");
+                richTextBox1.AppendText("CPU inference time:" + time.ToString() + " ms\n");
 
-            richTextBox1.AppendText("CPU inferece result: " + labelList[best] + "\n");
-
+                richTextBox1.AppendText("CPU inferece result: " + labelList[best] + "\n");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void msnhnetPathBtn_Click(object sender, EventArgs e)
@@ -123,18 +129,25 @@ namespace MsnhnetForm
 
         private void initBtn_Click(object sender, EventArgs e)
         {
-            if(msnhnetPathTxt.Text == "" || msnhbinPathTxt.Text == "" || labelPathTxt.Text == "")
+            try
             {
-                MessageBox.Show("Params error, please check params config");
-                return;
+                if (msnhnetPathTxt.Text == "" || msnhbinPathTxt.Text == "" || labelPathTxt.Text == "")
+                {
+                    MessageBox.Show("Params error, please check params config");
+                    return;
+                }
+                net.InitNet();
+                net.BuildNet(msnhnetPathTxt.Text, msnhbinPathTxt.Text, false, false);
+                StreamReader sr = new StreamReader(labelPathTxt.Text);
+                labels = sr.ReadToEnd();
+                sr.Close();
+                netInited = true;
+                richTextBox1.AppendText("Init done!\n");
             }
-            net.InitNet();
-            net.BuildNet(msnhnetPathTxt.Text, msnhbinPathTxt.Text, false, false);
-            StreamReader sr = new StreamReader(labelPathTxt.Text);
-            labels = sr.ReadToEnd();
-            sr.Close();
-            netInited = true;
-            richTextBox1.AppendText("Init done!\n");
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void classfiyGPUBtn_Click(object sender, EventArgs e)
@@ -155,23 +168,30 @@ namespace MsnhnetForm
                 return;
             }
 
-            Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);// image的长宽,非pictureBox的长宽
+            try
+            {
+                Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);// image的长宽,非pictureBox的长宽
 
-            Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
+                Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
 
-            BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
+                BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
 
-            int best = net.RunClassifyList(bmpdata, MsnhnetDef.PredDataType.PRE_DATA_FC32_C3,false,true);
+                int best = net.RunClassifyList(bmpdata, MsnhnetDef.PredDataType.PRE_DATA_FC32_C3, false, true);
 
-            bitmap.UnlockBits(bmpdata);
+                bitmap.UnlockBits(bmpdata);
 
-            string[] labelList = labels.Split('\n');
+                string[] labelList = labels.Split('\n');
 
-            float time = net.GetGpuForwardTime();
+                float time = net.GetGpuForwardTime();
 
-            richTextBox1.AppendText("GPU inference time:" + time.ToString() + " ms\n");
+                richTextBox1.AppendText("GPU inference time:" + time.ToString() + " ms\n");
 
-            richTextBox1.AppendText("GPU inferece result: " + labelList[best] + "\n");
+                richTextBox1.AppendText("GPU inferece result: " + labelList[best] + "\n");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void MsnhnetFrm_FormClosing(object sender, FormClosingEventArgs e)
@@ -187,6 +207,18 @@ namespace MsnhnetForm
         /// <param name="e"></param>
         private void classifyPreBtn_Click(object sender, EventArgs e)
         {
+            if (!netInited)
+            {
+                MessageBox.Show("Network is not inited");
+                return;
+            }
+
+            if (pictureBox1.Image == null)
+            {
+                MessageBox.Show("there is no pic in picBox!");
+                return;
+            }
+
             MsnhnetDef.Dim dim = net.GetInputDim();
             Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
             Bitmap outBitmap;
@@ -238,26 +270,39 @@ namespace MsnhnetForm
                 return;
             }
 
-            Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);// image的长宽,非pictureBox的长宽
-
-            Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
-
-            BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
-
-            List<Msnhnet.BBox> bboxes = net.RunYoloList(bmpdata, false, false);
-
-            bitmap.UnlockBits(bmpdata);
-
-            for (int i = 0; i < bboxes.Count; i++)
+            if (pictureBox1.Image == null)
             {
-                bboxes[i] = ImgPro.bboxResize2Org(bboxes[i], net.GetInputDim().width, net.GetInputDim().height, bitmap.Width, bitmap.Height);
+                MessageBox.Show("there is no pic in picBox!");
+                return;
             }
 
-            pictureBox1.Image = drawYolo(bitmap, bboxes,labels);
+            try
+            {
+                Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);// image的长宽,非pictureBox的长宽
 
-            float time = net.GetCpuForwardTime();
+                Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
 
-            richTextBox1.AppendText("CPU inference time:" + time.ToString() + " ms\n");
+                BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
+
+                List<Msnhnet.BBox> bboxes = net.RunYoloList(bmpdata, false, false);
+
+                bitmap.UnlockBits(bmpdata);
+
+                for (int i = 0; i < bboxes.Count; i++)
+                {
+                    bboxes[i] = ImgPro.bboxResize2Org(bboxes[i], net.GetInputDim().width, net.GetInputDim().height, bitmap.Width, bitmap.Height);
+                }
+
+                pictureBox1.Image = drawYolo(bitmap, bboxes, labels);
+
+                float time = net.GetCpuForwardTime();
+
+                richTextBox1.AppendText("CPU inference time:" + time.ToString() + " ms\n");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private Bitmap drawYolo(Bitmap bitmap, List<Msnhnet.BBox> bboxes, string mlabels)
@@ -344,26 +389,40 @@ namespace MsnhnetForm
                 return;
             }
 
-            Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);// image的长宽,非pictureBox的长宽
-
-            Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
-
-            BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
-
-            List<Msnhnet.BBox> bboxes = net.RunYoloList(bmpdata, false, true);
-
-            bitmap.UnlockBits(bmpdata);
-
-            for (int i = 0; i < bboxes.Count; i++)
+            if (!Msnhnet.WithGPU())
             {
-                bboxes[i] = ImgPro.bboxResize2Org(bboxes[i], net.GetInputDim().width, net.GetInputDim().height, bitmap.Width, bitmap.Height);
+                MessageBox.Show("Msnhnet not build with GPU");
+                return;
             }
 
-            pictureBox1.Image = drawYolo(bitmap, bboxes, labels);
+            try
+            {
+                Rectangle rect = new Rectangle(0, 0, pictureBox1.Image.Width, pictureBox1.Image.Height);// image的长宽,非pictureBox的长宽
 
-            float time = net.GetGpuForwardTime();
+                Bitmap bitmap = (Bitmap)pictureBox1.Image;//image转bitmap
 
-            richTextBox1.AppendText("GPU inference time:" + time.ToString() + " ms\n");
+                BitmapData bmpdata = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
+
+                List<Msnhnet.BBox> bboxes = net.RunYoloList(bmpdata, false, true);
+
+                bitmap.UnlockBits(bmpdata);
+
+                for (int i = 0; i < bboxes.Count; i++)
+                {
+                    bboxes[i] = ImgPro.bboxResize2Org(bboxes[i], net.GetInputDim().width, net.GetInputDim().height, bitmap.Width, bitmap.Height);
+                }
+
+                pictureBox1.Image = drawYolo(bitmap, bboxes, labels);
+
+                float time = net.GetGpuForwardTime();
+
+                richTextBox1.AppendText("GPU inference time:" + time.ToString() + " ms\n");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
         }
 
         private void resetImgBtn_Click(object sender, EventArgs e)
